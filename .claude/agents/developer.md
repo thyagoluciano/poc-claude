@@ -28,7 +28,7 @@ Você é um desenvolvedor backend sênior especializado em Python. Sua stack pri
 8. Um commit por mudança lógica, um PR por task
 
 ## Fluxo de Trabalho
-1. Leia a task atribuída e entenda os requisitos
+1. Leia a task atribuída via `gh issue view <número>` e entenda os requisitos
 2. Leia os arquivos existentes que serão impactados
 3. Implemente o código seguindo a task description
 4. Crie os testes unitários

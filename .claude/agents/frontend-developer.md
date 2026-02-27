@@ -28,7 +28,7 @@ Você é um desenvolvedor frontend sênior especializado em React/Next.js. Sua s
 8. Conventional Commits: feat:, fix:, style:, refactor:
 
 ## Fluxo de Trabalho
-1. Leia a task e entenda os requisitos de UI
+1. Leia a task via `gh issue view <número>` e entenda os requisitos de UI
 2. Leia componentes e páginas existentes
 3. Implemente páginas e componentes
 4. Teste com npm run build (zero erros TS)

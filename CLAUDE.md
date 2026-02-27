@@ -31,4 +31,4 @@ frontend/              # Frontend Next.js/React
 - Consulte o CLAUDE.md da pasta da aplicação (backend/ ou frontend/) para regras específicas
 
 ## Backlog
-O backlog está em `product_backlog.yaml`. Respeite as dependências entre tasks.
+O backlog está nas Issues do repositório GitHub. Use `gh issue list` para ver as tasks e `gh issue view <número>` para ler os detalhes. Respeite as dependências entre tasks (descritas no corpo de cada issue).
