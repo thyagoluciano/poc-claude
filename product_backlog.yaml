@@ -3,6 +3,10 @@ product:
   description: "API REST de gerenciamento de tarefas — construída autonomamente por uma squad híbrida"
 
 tasks:
+  # ============================================================
+  # WAVE 1 — Sem dependências (3 tasks em paralelo)
+  # ============================================================
+
   - id: task-01-models
     title: "Modelos Pydantic e Schemas"
     description: |
@@ -10,7 +14,7 @@ tasks:
 
       ## O que criar
 
-      1. `src/taskflow/schemas.py` — Schemas Pydantic:
+      1. `backend/src/taskflow/schemas.py` — Schemas Pydantic:
          - `TaskBase(BaseModel)`: title (str, min 1, max 200), description (str | None), priority (Literal["low","medium","high"], default "medium")
          - `TaskCreate(TaskBase)`: usado para criação
          - `TaskUpdate(BaseModel)`: todos os campos opcionais + status (Literal["todo","in_progress","done"] | None)
@@ -19,26 +23,21 @@ tasks:
          - `UserCreate(UserBase)`: password (str, min 8)
          - `UserResponse(UserBase)`: id (int), created_at (datetime)
 
-      2. `src/taskflow/__init__.py` — Pacote vazio
-
-      3. `tests/test_schemas.py` — Testes unitários:
+      2. `backend/tests/test_schemas.py` — Testes unitários:
          - Testar criação válida de TaskCreate e UserCreate
          - Testar validações (título vazio, senha curta, email inválido)
          - Testar TaskUpdate com campos parciais
 
-      ## Setup do projeto
-      - Se não existir `pyproject.toml`, crie com: name="taskflow-api", dependencies=["fastapi","pydantic[email]","sqlalchemy","python-jose[cryptography]","passlib[bcrypt]","uvicorn","pytest","httpx"]
-      - Se não existir `src/taskflow/`, crie o diretório
+      ## Nota
+      - O `backend/pyproject.toml` e `backend/src/taskflow/__init__.py` já foram criados no setup do repo (etapa-01).
     dependencies: []
     acceptance_criteria:
-      - "Schemas Pydantic criados em src/taskflow/schemas.py"
+      - "Schemas Pydantic criados em backend/src/taskflow/schemas.py"
       - "Validações funcionando (min/max length, email, etc)"
-      - "Testes em tests/test_schemas.py passando"
+      - "Testes em backend/tests/test_schemas.py passando"
     files_to_create:
-      - "src/taskflow/__init__.py"
-      - "src/taskflow/schemas.py"
-      - "tests/test_schemas.py"
-      - "pyproject.toml"
+      - "backend/src/taskflow/schemas.py"
+      - "backend/tests/test_schemas.py"
 
   - id: task-02-database
     title: "Setup do Banco de Dados"
@@ -47,14 +46,14 @@ tasks:
 
       ## O que criar
 
-      1. `src/taskflow/database.py` — Configuração do banco:
+      1. `backend/src/taskflow/database.py` — Configuração do banco:
          - Engine SQLite: `sqlite:///./taskflow.db`
          - SessionLocal com autocommit=False, autoflush=False
          - Base = declarative_base()
          - Função `get_db()` que retorna session como dependency do FastAPI (yield pattern)
          - Função `create_tables()` que cria todas as tabelas
 
-      2. `src/taskflow/db_models.py` — Modelos SQLAlchemy:
+      2. `backend/src/taskflow/db_models.py` — Modelos SQLAlchemy:
          - `UserModel(Base)`: table "users"
            - id: Integer, primary_key, autoincrement
            - username: String(50), unique, index
@@ -73,14 +72,13 @@ tasks:
            - owner_id: Integer, ForeignKey("users.id")
            - owner: relationship("UserModel", back_populates="tasks")
 
-      3. `tests/test_database.py` — Testes:
+      3. `backend/tests/test_database.py` — Testes:
          - Testar criação de tabelas
          - Testar inserção de User e Task
          - Testar relacionamento User <-> Tasks
 
-      ## Setup
-      - Se não existir `pyproject.toml`, crie com as mesmas deps do task-01
-      - Se não existir `src/taskflow/__init__.py`, crie
+      ## Nota
+      - O `backend/pyproject.toml` e `backend/src/taskflow/__init__.py` já foram criados no setup do repo (etapa-01).
     dependencies: []
     acceptance_criteria:
       - "SQLAlchemy configurado com SQLite"
@@ -88,9 +86,59 @@ tasks:
       - "Relacionamento User-Tasks funcionando"
       - "Testes passando"
     files_to_create:
-      - "src/taskflow/database.py"
-      - "src/taskflow/db_models.py"
-      - "tests/test_database.py"
+      - "backend/src/taskflow/database.py"
+      - "backend/src/taskflow/db_models.py"
+      - "backend/tests/test_database.py"
+
+  - id: task-07-nextjs-setup
+    title: "Next.js Setup + Layout Base"
+    description: |
+      Criar o projeto Next.js com TypeScript, Tailwind CSS, App Router, layout base e cliente API.
+
+      ## O que criar
+
+      1. Setup do projeto:
+         ```bash
+         npx create-next-app@latest frontend --typescript --tailwind --app --src-dir --eslint
+         ```
+
+      2. `frontend/src/lib/api.ts` — Cliente API:
+         - Base URL configurável via env: NEXT_PUBLIC_API_URL (default: http://localhost:8000)
+         - Funções genéricas: apiGet<T>, apiPost<T>, apiPut<T>, apiDelete<T>
+         - Interceptor para incluir JWT token do localStorage no header Authorization
+         - Tratamento de erros: 401 → redirect para /login, outros → throw com mensagem
+
+      3. `frontend/src/app/layout.tsx` — Layout base:
+         - Navbar com logo "TaskFlow", links (Dashboard, Tasks), botão Login/Logout
+         - Footer simples com copyright
+         - Wrapper para providers (AuthContext será adicionado na task-08)
+         - Metadata: title="TaskFlow", description="Gerenciamento de tarefas"
+
+      4. `frontend/src/app/page.tsx` — Home page:
+         - Hero section com título "TaskFlow" e descrição
+         - Botão CTA "Ir para Dashboard" (link para /dashboard)
+         - Design limpo com Tailwind
+
+      ## Importante
+      - Usar App Router (não Pages Router)
+      - TypeScript strict mode
+      - Tailwind CSS para todos os estilos
+      - Não instalar bibliotecas de UI extras (shadcn, MUI, etc) — usar Tailwind puro
+    dependencies: []
+    acceptance_criteria:
+      - "Next.js rodando com npm run dev"
+      - "Layout base com navbar e footer"
+      - "Cliente API em lib/api.ts configurado"
+      - "TypeScript strict mode ativo"
+      - "Tailwind CSS funcionando"
+    files_to_create:
+      - "frontend/src/lib/api.ts"
+      - "frontend/src/app/layout.tsx"
+      - "frontend/src/app/page.tsx"
+
+  # ============================================================
+  # WAVE 2 — Dependem da Wave 1 (2 tasks em paralelo)
+  # ============================================================
 
   - id: task-03-crud
     title: "Camada de Repositório CRUD"
@@ -99,7 +147,7 @@ tasks:
 
       ## O que criar
 
-      1. `src/taskflow/repositories.py` — Operações CRUD:
+      1. `backend/src/taskflow/repositories.py` — Operações CRUD:
 
          class TaskRepository:
            - `create(db: Session, task: TaskCreate, owner_id: int) -> TaskModel`
@@ -115,7 +163,7 @@ tasks:
            - `get_by_username(db: Session, username: str) -> UserModel | None`
            - `verify_password(plain: str, hashed: str) -> bool`
 
-      2. `tests/test_repositories.py` — Testes:
+      2. `backend/tests/test_repositories.py` — Testes:
          - Testar CRUD completo de Task (create, read, update, delete)
          - Testar criação de User com senha hasheada
          - Testar busca por username
@@ -133,8 +181,8 @@ tasks:
       - "Senhas hasheadas com passlib"
       - "Testes com SQLite in-memory passando"
     files_to_create:
-      - "src/taskflow/repositories.py"
-      - "tests/test_repositories.py"
+      - "backend/src/taskflow/repositories.py"
+      - "backend/tests/test_repositories.py"
 
   - id: task-04-auth
     title: "Autenticação JWT"
@@ -143,7 +191,7 @@ tasks:
 
       ## O que criar
 
-      1. `src/taskflow/auth.py` — Módulo de autenticação:
+      1. `backend/src/taskflow/auth.py` — Módulo de autenticação:
          - SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
          - ALGORITHM = "HS256"
          - ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -153,11 +201,11 @@ tasks:
            - oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
            - Decodifica token, busca user no banco, retorna UserModel
 
-      2. `src/taskflow/auth_router.py` — Router FastAPI:
+      2. `backend/src/taskflow/auth_router.py` — Router FastAPI:
          - POST `/auth/register` — Cria user, retorna UserResponse
          - POST `/auth/login` — Recebe OAuth2PasswordRequestForm, verifica senha, retorna {"access_token": ..., "token_type": "bearer"}
 
-      3. `tests/test_auth.py` — Testes:
+      3. `backend/tests/test_auth.py` — Testes:
          - Testar criação de token e decodificação
          - Testar token expirado
          - Testar registro de usuário via API
@@ -177,9 +225,13 @@ tasks:
       - "get_current_user extraindo user do token"
       - "Testes passando"
     files_to_create:
-      - "src/taskflow/auth.py"
-      - "src/taskflow/auth_router.py"
-      - "tests/test_auth.py"
+      - "backend/src/taskflow/auth.py"
+      - "backend/src/taskflow/auth_router.py"
+      - "backend/tests/test_auth.py"
+
+  # ============================================================
+  # WAVE 3 — Dependem da Wave 2 (2 tasks em paralelo)
+  # ============================================================
 
   - id: task-05-api-endpoints
     title: "API Endpoints FastAPI"
@@ -188,17 +240,18 @@ tasks:
 
       ## O que criar
 
-      1. `src/taskflow/task_router.py` — Router de Tasks:
+      1. `backend/src/taskflow/task_router.py` — Router de Tasks:
          - GET `/tasks` — Lista todas as tasks (com paginação: skip, limit)
          - GET `/tasks/{task_id}` — Busca task por ID (404 se não existe)
          - POST `/tasks` — Cria task (requer autenticação, owner_id = current_user.id)
          - PUT `/tasks/{task_id}` — Atualiza task (requer autenticação, só owner pode atualizar)
          - DELETE `/tasks/{task_id}` — Deleta task (requer autenticação, só owner pode deletar)
 
-      2. `src/taskflow/app.py` — Aplicação FastAPI principal:
+      2. `backend/src/taskflow/app.py` — Aplicação FastAPI principal:
          - Criar FastAPI app com title="TaskFlow API", description, version="1.0.0"
          - Incluir auth_router com prefix="/auth" e tags=["auth"]
          - Incluir task_router com prefix="/tasks" e tags=["tasks"]
+         - Adicionar CORS middleware (allow all origins para dev)
          - Adicionar evento startup que chama create_tables()
          - Adicionar endpoint GET `/` retornando {"message": "TaskFlow API", "version": "1.0.0", "docs": "/docs"}
 
@@ -207,6 +260,7 @@ tasks:
       - Use os imports e tipos existentes
       - Use Depends(get_current_user) para rotas protegidas
       - Use Depends(get_db) para obter session
+      - Adicionar CORSMiddleware para permitir requests do frontend
     dependencies:
       - task-03-crud
       - task-04-auth
@@ -216,8 +270,66 @@ tasks:
       - "Rotas protegidas requerem autenticação"
       - "Documentação OpenAPI disponível em /docs"
     files_to_create:
-      - "src/taskflow/task_router.py"
-      - "src/taskflow/app.py"
+      - "backend/src/taskflow/task_router.py"
+      - "backend/src/taskflow/app.py"
+
+  - id: task-08-auth-ui
+    title: "Auth UI - Login/Register"
+    description: |
+      Criar as páginas de login e registro, AuthContext com JWT e wrapper de rotas protegidas.
+
+      ## O que criar
+
+      1. `frontend/src/lib/auth.tsx` — AuthContext:
+         - AuthContext com React Context API
+         - Estado: user (objeto com id, username, email), token (string), isAuthenticated (boolean), isLoading (boolean)
+         - Funções: login(username, password), register(username, email, password), logout()
+         - Persistência do token no localStorage
+         - Auto-login ao carregar (verificar token existente)
+         - Provider que wrapa toda a aplicação
+
+      2. `frontend/src/app/login/page.tsx` — Página de Login:
+         - Formulário com username e password
+         - Botão de submit com loading state
+         - Link "Não tem conta? Registre-se"
+         - Redirect para /dashboard após login sucesso
+         - Mensagem de erro para credenciais inválidas
+
+      3. `frontend/src/app/register/page.tsx` — Página de Registro:
+         - Formulário com username, email e password
+         - Validação client-side (email formato, senha mínimo 8 chars)
+         - Redirect para /login após registro sucesso
+         - Mensagem de erro para username/email duplicado
+
+      4. `frontend/src/components/ProtectedRoute.tsx` — Wrapper:
+         - Verifica se user está autenticado via AuthContext
+         - Se não: redirect para /login
+         - Se loading: mostrar spinner/skeleton
+         - Se sim: renderizar children
+
+      ## Importante
+      - Leia os arquivos existentes do frontend (layout.tsx, api.ts)
+      - Use 'use client' nos componentes que usam hooks
+      - Integrar com POST /auth/login (OAuth2 form) e POST /auth/register
+      - Atualizar layout.tsx para wrapar com AuthProvider
+    dependencies:
+      - task-04-auth
+      - task-07-nextjs-setup
+    acceptance_criteria:
+      - "Login funcional com JWT"
+      - "Registro funcional"
+      - "AuthContext gerenciando estado de autenticação"
+      - "ProtectedRoute redirecionando usuários não autenticados"
+      - "Integração com POST /auth/login e POST /auth/register"
+    files_to_create:
+      - "frontend/src/lib/auth.tsx"
+      - "frontend/src/app/login/page.tsx"
+      - "frontend/src/app/register/page.tsx"
+      - "frontend/src/components/ProtectedRoute.tsx"
+
+  # ============================================================
+  # WAVE 4 — Dependem da Wave 3 (2 tasks em paralelo)
+  # ============================================================
 
   - id: task-06-integration-tests
     title: "Testes de Integração End-to-End"
@@ -226,12 +338,12 @@ tasks:
 
       ## O que criar
 
-      1. `tests/conftest.py` — Fixtures compartilhadas:
+      1. `backend/tests/conftest.py` — Fixtures compartilhadas:
          - Fixture `test_db` que cria banco SQLite in-memory e sessão
          - Fixture `client` que cria TestClient do FastAPI com override de get_db
          - Fixture `auth_headers` que registra user, faz login e retorna headers com token
 
-      2. `tests/test_integration.py` — Testes end-to-end:
+      2. `backend/tests/test_integration.py` — Testes end-to-end:
          - test_health_check: GET / retorna 200 com message
          - test_full_task_lifecycle:
            1. Registrar usuário (POST /auth/register)
@@ -260,203 +372,122 @@ tasks:
       - "Teste de autorização (403 para non-owner)"
       - "Todos os testes passando com pytest"
     files_to_create:
-      - "tests/conftest.py"
-      - "tests/test_integration.py"
+      - "backend/tests/conftest.py"
+      - "backend/tests/test_integration.py"
 
-  - id: task-07-nextjs-setup
-    title: "Next.js Setup + Layout Base"
-    description: |
-      Criar o projeto Next.js com App Router, TypeScript e Tailwind CSS.
-
-      ## O que criar
-
-      1. Projeto Next.js em `src/frontend/`:
-         - Criar com App Router (app/ directory)
-         - TypeScript em strict mode
-         - Tailwind CSS configurado e funcionando
-
-      2. `src/frontend/src/app/layout.tsx` — Layout base:
-         - Header com logo "TaskFlow" e links de navegação (Dashboard, Tasks, Login/Logout)
-         - Footer simples
-         - Tailwind CSS para estilização
-
-      3. `src/frontend/src/app/page.tsx` — Homepage:
-         - Hero section com título e descrição do app
-         - Call-to-action buttons (Login, Register)
-
-      4. `src/frontend/src/lib/api.ts` — API Client:
-         - Base URL configurável via NEXT_PUBLIC_API_URL (default: http://localhost:8000)
-         - Funções tipadas para todos os endpoints:
-           - auth: login, register
-           - tasks: list, getById, create, update, delete
-         - Headers com Authorization Bearer token
-         - Tipos TypeScript para Request/Response
-
-      ## Setup
-      - Criar package.json com dependências Next.js, React, TypeScript, Tailwind
-      - tsconfig.json com strict mode
-      - tailwind.config.ts configurado
-    dependencies: []
-    acceptance_criteria:
-      - "Projeto Next.js criado com App Router e TypeScript"
-      - "Tailwind CSS configurado e funcionando"
-      - "Layout base com header e navegação"
-      - "API client em lib/api.ts com tipos"
-      - "Build passando: npm run build"
-    files_to_create:
-      - "src/frontend/package.json"
-      - "src/frontend/src/app/layout.tsx"
-      - "src/frontend/src/app/page.tsx"
-      - "src/frontend/src/lib/api.ts"
-      - "src/frontend/tsconfig.json"
-      - "src/frontend/tailwind.config.ts"
-
-  - id: task-08-auth-ui
-    title: "Auth UI — Login e Register"
-    description: |
-      Criar páginas de login e registro com context de autenticação.
-
-      ## O que criar
-
-      1. `src/frontend/src/lib/auth-context.tsx` — AuthContext:
-         - Context com user, token, login(), logout(), register()
-         - Token armazenado em localStorage
-         - Auto-load token no mount
-         - Provider wrapping toda a app
-
-      2. `src/frontend/src/app/login/page.tsx` — Página de Login:
-         - Formulário com username e senha
-         - Validação client-side
-         - Chamada à API /auth/login
-         - Redirect para /dashboard após login
-         - Link para /register
-
-      3. `src/frontend/src/app/register/page.tsx` — Página de Registro:
-         - Formulário com username, email e senha
-         - Validação client-side
-         - Chamada à API /auth/register
-         - Redirect para /login após registro
-         - Link para /login
-
-      4. `src/frontend/src/components/ProtectedRoute.tsx` — Proteção de rotas:
-         - HOC ou wrapper component
-         - Redirect para /login se não autenticado
-         - Loading state enquanto verifica auth
-
-      ## Importante
-      - Leia os arquivos existentes (layout.tsx, api.ts) para manter consistência
-      - Use Tailwind para estilização
-      - Integração com API backend
-    dependencies:
-      - task-04-auth
-      - task-07-nextjs-setup
-    acceptance_criteria:
-      - "Página de login funcional"
-      - "Página de registro funcional"
-      - "AuthContext com token JWT"
-      - "ProtectedRoute redireciona para login"
-      - "Integração com API backend"
-      - "Build passando"
-    files_to_create:
-      - "src/frontend/src/app/login/page.tsx"
-      - "src/frontend/src/app/register/page.tsx"
-      - "src/frontend/src/lib/auth-context.tsx"
-      - "src/frontend/src/components/ProtectedRoute.tsx"
-
-  - id: task-09-task-ui
+  - id: task-09-task-management-ui
     title: "Task Management UI"
     description: |
-      Criar UI de gerenciamento de tasks com CRUD e filtros.
+      Criar a interface de gerenciamento de tarefas: listagem com filtros, formulários de criação/edição, exclusão e badges de status.
 
       ## O que criar
 
-      1. `src/frontend/src/app/tasks/page.tsx` — Lista de Tasks:
-         - Listagem de tasks do usuário logado
-         - Filtros por status (All, Todo, In Progress, Done)
-         - Botão "New Task" linkando para /tasks/new
-         - Cada task renderizada como TaskCard
+      1. `frontend/src/app/tasks/page.tsx` — Lista de Tasks:
+         - Listagem de tasks em cards
+         - Filtros por status (todo, in_progress, done) e prioridade (low, medium, high)
+         - Botão "Nova Task" (link para /tasks/new)
+         - Loading state (skeleton) e empty state ("Nenhuma task encontrada")
+         - Rota protegida (usar ProtectedRoute)
 
-      2. `src/frontend/src/app/tasks/new/page.tsx` — Criar Task:
-         - Formulário com título, descrição e prioridade
-         - Validação client-side
-         - Chamada POST /tasks
-         - Redirect para /tasks após criação
+      2. `frontend/src/app/tasks/new/page.tsx` — Criar Task:
+         - Formulário com: title (input text), description (textarea), priority (select: low/medium/high)
+         - Validação: title obrigatório, min 1 char
+         - Submit: POST /tasks com auth headers
+         - Sucesso: redirect para /tasks
+         - Erro: mostrar mensagem
 
-      3. `src/frontend/src/app/tasks/[id]/page.tsx` — Editar Task:
-         - Carrega task por ID
+      3. `frontend/src/app/tasks/[id]/edit/page.tsx` — Editar Task:
+         - Carregar dados da task (GET /tasks/{id})
          - Formulário preenchido com dados atuais
-         - Chamada PUT /tasks/{id}
-         - Botão delete com confirmação
-         - Redirect para /tasks após salvar/deletar
+         - Campos: title, description, priority, status (select: todo/in_progress/done)
+         - Submit: PUT /tasks/{id} com auth headers
+         - Botões: Salvar e Cancelar (volta para /tasks)
 
-      4. `src/frontend/src/components/TaskCard.tsx` — Card de Task:
-         - Exibe título, descrição truncada, prioridade e status
-         - Status badge com cores (todo=gray, in_progress=blue, done=green)
-         - Priority badge com cores (low=green, medium=yellow, high=red)
-         - Link para página de edição
+      4. `frontend/src/components/TaskCard.tsx` — Card de Task:
+         - Exibir: title, description (truncada em 100 chars), priority badge, status badge
+         - Botões: Edit (link para /tasks/{id}/edit), Delete
+         - Delete: confirm() → DELETE /tasks/{id} → remover da lista
 
-      5. `src/frontend/src/components/TaskForm.tsx` — Formulário reutilizável:
-         - Campos: title, description (textarea), priority (select), status (select, apenas em edição)
-         - Props: initialData?, onSubmit, isEditing?
-         - Validação e loading state
+      5. `frontend/src/components/StatusBadge.tsx` — Badge de Status/Prioridade:
+         - Status: todo (bg-gray-100 text-gray-800), in_progress (bg-yellow-100 text-yellow-800), done (bg-green-100 text-green-800)
+         - Priority: low (bg-blue-100 text-blue-800), medium (bg-orange-100 text-orange-800), high (bg-red-100 text-red-800)
 
       ## Importante
-      - Leia os arquivos existentes para manter consistência
-      - Use Tailwind para estilização
-      - Integração com API /tasks/*
+      - Leia todos os arquivos frontend existentes (layout, api.ts, auth.tsx)
+      - Todas as páginas de tasks são protegidas (requerem auth)
+      - Usar o cliente API de lib/api.ts para requests
+      - Usar StatusBadge para consistência visual
     dependencies:
       - task-05-api-endpoints
       - task-07-nextjs-setup
     acceptance_criteria:
-      - "Lista de tasks com filtros por status"
-      - "Formulário de criar/editar task"
-      - "Delete com confirmação"
-      - "Status badges coloridos"
-      - "Integração com API /tasks/*"
-      - "Build passando"
+      - "Lista de tasks com filtros por status e prioridade"
+      - "Criação de task funcional"
+      - "Edição de task funcional"
+      - "Exclusão com confirmação"
+      - "Status badges com cores"
+      - "Integração com API de tasks"
     files_to_create:
-      - "src/frontend/src/app/tasks/page.tsx"
-      - "src/frontend/src/app/tasks/new/page.tsx"
-      - "src/frontend/src/app/tasks/[id]/page.tsx"
-      - "src/frontend/src/components/TaskCard.tsx"
-      - "src/frontend/src/components/TaskForm.tsx"
+      - "frontend/src/app/tasks/page.tsx"
+      - "frontend/src/app/tasks/new/page.tsx"
+      - "frontend/src/app/tasks/[id]/edit/page.tsx"
+      - "frontend/src/components/TaskCard.tsx"
+      - "frontend/src/components/StatusBadge.tsx"
+
+  # ============================================================
+  # WAVE 5 — Final (1 task)
+  # ============================================================
 
   - id: task-10-dashboard
     title: "Dashboard + Integração Final"
     description: |
-      Criar dashboard com stats cards e integração final entre frontend e backend.
+      Criar o dashboard com estatísticas, overview de tasks e verificação final de integração.
 
       ## O que criar
 
-      1. `src/frontend/src/app/dashboard/page.tsx` — Dashboard:
-         - Cards de estatísticas: total tasks, por status (todo, in_progress, done), por prioridade (low, medium, high)
-         - Lista de tasks recentes (últimas 5)
-         - Botão rápido para criar nova task
-         - Protegido por autenticação
+      1. `frontend/src/app/dashboard/page.tsx` — Dashboard:
+         - Stats cards em grid (2x2 ou 4 colunas):
+           - Total de tasks (número grande)
+           - Tasks por status: X todo, Y in_progress, Z done
+           - Tasks por prioridade: X low, Y medium, Z high
+           - Percentual concluído (done/total)
+         - Overview: tabela/lista das últimas 5 tasks criadas
+         - Botão rápido "Nova Task" (link para /tasks/new)
+         - Gráfico simples de barras CSS (div com width proporcional) mostrando distribuição por status
+         - Rota protegida
 
-      2. `src/frontend/src/components/StatsCard.tsx` — Card de estatística:
-         - Props: title, value, color, icon?
-         - Estilização com Tailwind
-         - Responsivo
+      2. Integração final — verificar:
+         - Auth flow completo: register → login → dashboard → tasks → CRUD → logout
+         - Navbar atualiza com nome do user logado
+         - Logout limpa token e redireciona
+         - Páginas protegidas redirecionam para login
+         - API retorna erros tratados (404, 401, 403)
 
-      ## Integração Final
-      - Verificar navegação completa entre todas as páginas
-      - Testar fluxo E2E: register -> login -> criar task -> listar -> editar -> deletar
-      - Garantir que build passa sem erros
+      3. Checklist de teste E2E manual:
+         - [ ] Registro de novo usuário
+         - [ ] Login com credenciais válidas
+         - [ ] Dashboard mostra estatísticas corretas
+         - [ ] Criar nova task via formulário
+         - [ ] Task aparece na lista e no dashboard
+         - [ ] Editar task (mudar título e status)
+         - [ ] Dashboard atualiza estatísticas
+         - [ ] Deletar task com confirmação
+         - [ ] Logout e redirect para login
+         - [ ] Tentar acessar /dashboard sem token → redirect login
 
       ## Importante
-      - Leia TODOS os arquivos existentes para entender a estrutura completa
-      - Use Tailwind para estilização
-      - Todas as páginas devem estar conectadas via navegação
+      - Leia TODOS os arquivos frontend existentes
+      - O dashboard deve buscar dados via API (GET /tasks)
+      - Calcular stats no client-side a partir dos dados retornados
+      - Design responsivo com Tailwind (funcionar em mobile)
     dependencies:
       - task-08-auth-ui
-      - task-09-task-ui
+      - task-09-task-management-ui
     acceptance_criteria:
-      - "Dashboard com cards de estatísticas"
-      - "Overview de tasks recentes"
-      - "Navegação completa"
-      - "Build passando"
-      - "Fluxo E2E: register → login → CRUD tasks"
+      - "Dashboard com stats cards funcionando"
+      - "Gráfico de barras CSS mostrando distribuição"
+      - "Overview das últimas tasks"
+      - "Auth flow completo funcionando"
+      - "E2E manual checklist passando"
     files_to_create:
-      - "src/frontend/src/app/dashboard/page.tsx"
-      - "src/frontend/src/components/StatsCard.tsx"
+      - "frontend/src/app/dashboard/page.tsx"
