@@ -2,22 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, [pathname]);
-
-  function handleLogout() {
-    localStorage.removeItem("token");
-    setIsLoggedIn(false);
-    window.location.href = "/login";
-  }
+  const { isAuthenticated, logout } = useAuth();
 
   function navLinkClass(path: string): string {
     const isActive = pathname === path;
@@ -46,9 +35,9 @@ export default function Navbar() {
           </div>
         </div>
         <div>
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               Logout
