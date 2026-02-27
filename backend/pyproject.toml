@@ -1,0 +1,29 @@
+[project]
+name = "taskflow-api"
+version = "0.1.0"
+description = "TaskFlow API — REST API de gerenciamento de tarefas"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "pydantic[email]",
+    "sqlalchemy",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "uvicorn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
