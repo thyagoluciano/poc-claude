@@ -1,35 +1,49 @@
-name: Claude PR Review
+name: Claude Code Review
 
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
   pull_request:
     types: [opened, synchronize]
 
+  issue_comment:
+    types: [created]
+
+  pull_request_review_comment:
+    types: [created]
+
 jobs:
   claude-review:
-    # Run on PR events OR when @claude is mentioned in comments
     if: |
       github.event_name == 'pull_request' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' &&
+       contains(github.event.comment.body, '@claude'))
+
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
+
     permissions:
       contents: read
       pull-requests: write
       issues: write
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Claude Code
+      - name: Run Claude Code Review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          max_turns: "10"
+          prompt: |
+            Analise este Pull Request de forma concisa:
+
+            1. **Resumo**: O que este PR faz (1-2 frases)
+            2. **Problemas**: Bugs, vulnerabilidades ou erros de lógica
+            3. **Sugestões**: Melhorias de código (max 3)
+            4. **Veredicto**: ✅ Aprovado | ⚠️ Precisa de ajustes | ❌ Precisa retrabalho
+
+            Seja direto e objetivo. Foque em problemas reais, não em estilo.
