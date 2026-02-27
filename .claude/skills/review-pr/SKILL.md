@@ -1,62 +1,82 @@
 ---
 name: review-pr
-description: Executa review multi-perspectiva de um PR. Lança 3 agentes em paralelo (security, quality, tests) que analisam o diff do PR de suas respectivas perspectivas.
-argument-hint: "[PR number or 'current']"
-allowed-tools: Read, Grep, Glob, Bash, Task
+description: Executa review paralelo do PR atual usando 3 subagentes especializados (segurança, qualidade, testes). Consolida em um único report.
+argument-hint: "[branch-name or PR-number (optional)]"
+allowed-tools: Read, Glob, Grep, Bash, Task
 ---
 
-# Review Multi-Perspectiva de PR
+# Skill: Review de PR Paralelo
 
-Execute um review completo do PR atual ou especificado, lançando 3 agentes especializados em paralelo.
+Execute um review completo do Pull Request atual usando 3 subagentes especializados em paralelo.
 
 ## Argumentos
-$ARGUMENTS
 
-## Instruções
+Argumento opcional: $ARGUMENTS
+- Se fornecido, usar como referência do PR (branch ou número)
+- Se vazio, analisar os arquivos modificados no último commit ou working tree
 
-1. Identifique o PR a ser revisado:
-   - Se argumento é um número: use `gh pr view $1 --json files,body,title`
-   - Se argumento é 'current' ou vazio: use `gh pr view --json files,body,title`
+## Passo 1 — Identificar Arquivos Modificados
 
-2. Obtenha o diff do PR:
-   ```bash
-   gh pr diff $PR_NUMBER
-   ```
+Identifique os arquivos modificados:
 
-3. Lance 3 subagentes em PARALELO (Task tool com subagent_type "general-purpose"), cada um recebendo o diff e analisando de sua perspectiva:
+```bash
+# Comparar branch atual com main
+git diff --name-only main...HEAD 2>/dev/null || git diff --name-only HEAD
+```
 
-   **Subagente 1 — Security Review**:
-   Analise o diff focando em: SQL injection, auth bypass, secrets exposure, XSS, CORS, JWT security, input validation, error handling.
-   Output: comentário com findings categorizados (🔴 Crítico, 🟡 Atenção, 🟢 OK) + score /10.
+## Passo 2 — Lançar 3 Subagentes em Paralelo
 
-   **Subagente 2 — Quality Review**:
-   Analise o diff focando em: SOLID, DRY, KISS, type hints, naming, docstrings, FastAPI/React patterns, error handling.
-   Output: comentário com findings categorizados + score /10.
+Lance EXATAMENTE 3 subagentes usando a tool Task, TODOS EM PARALELO:
 
-   **Subagente 3 — Test Review**:
-   Analise o diff focando em: cobertura, happy path, edge cases, error cases, fixtures, assertions, naming, isolation.
-   Output: comentário com findings categorizados + cobertura estimada + score /10.
+### Subagente 1: Security Reviewer
+- **agent**: security-reviewer
+- **prompt**: Analise os arquivos modificados neste PR focando em segurança (OWASP Top 10). Arquivos: [lista]. Produza report de segurança.
 
-4. Consolide os 3 reviews em um único comentário:
-   ```bash
-   gh pr comment $PR_NUMBER --body "CONSOLIDATED_REVIEW"
-   ```
+### Subagente 2: Quality Reviewer
+- **agent**: quality-reviewer
+- **prompt**: Analise os arquivos modificados focando em qualidade (SOLID, clean code, types). Arquivos: [lista]. Produza report de qualidade.
 
-## Formato do Comentário Final
+### Subagente 3: Test Reviewer
+- **agent**: test-reviewer
+- **prompt**: Analise os arquivos de teste focando em cobertura, edge cases e assertions. Arquivos: [lista]. Produza report de testes.
+
+**IMPORTANTE**: Lance os 3 em UMA ÚNICA mensagem com 3 tool calls paralelos.
+
+## Passo 3 — Consolidar
+
+Consolide os resultados em um único report:
 
 ```markdown
-# 🔍 Review Automático — Squad Híbrida
+# 📋 Review Consolidado do PR
 
-## 🔒 Security Review (Score: X/10)
-[Resumo do security review]
+## 🔒 Segurança
+[Resumo do report do security-reviewer]
+- Vulnerabilidades encontradas (se houver)
+- Boas práticas confirmadas
 
-## ✨ Quality Review (Score: X/10)
-[Resumo do quality review]
+## 📐 Qualidade de Código
+[Resumo do report do quality-reviewer]
+- Problemas de qualidade (se houver)
+- Pontos positivos
 
-## 🧪 Test Review (Score: X/10 | Cobertura: Y%)
-[Resumo do test review]
+## 🧪 Testes
+[Resumo do report do test-reviewer]
+- Gaps de cobertura (se houver)
+- Qualidade das assertions
 
----
-**Score Geral: X/10**
-*Review realizado por 3 agentes especializados em paralelo*
+## Veredicto Final
+- ✅ **Aprovado** — Nenhum problema crítico encontrado
+- ⚠️ **Aprovado com ressalvas** — Problemas menores a resolver
+- ❌ **Precisa de ajustes** — Problemas críticos encontrados
+
+### Ações Sugeridas
+1. [Ação mais importante]
+2. [Segunda ação]
+3. [Terceira ação]
 ```
+
+## Notas
+- Os subagentes são READ-ONLY — eles apenas leem e analisam
+- Cada subagente tem acesso apenas a Read, Glob e Grep
+- O review foca nos arquivos MODIFICADOS, não no projeto inteiro
+- Se não houver arquivos de teste, o test-reviewer analisa se testes deveriam ter sido criados
