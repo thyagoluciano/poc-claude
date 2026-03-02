@@ -2,6 +2,7 @@
 
 import {ThemeContextProvider, MainNavigationBar, ResponsiveLayout} from '@telefonica/mistica';
 import {misticaTheme} from '@/lib/theme';
+import {AuthProvider} from '@/lib/auth';
 import {useRouter, usePathname} from 'next/navigation';
 
 const sections = [
@@ -25,18 +26,20 @@ function AppLayout({children}: {children: React.ReactNode}) {
     <html lang="pt-BR">
       <body style={{margin: 0}}>
         <ThemeContextProvider theme={misticaTheme}>
-          <MainNavigationBar
-            sections={sections.map((section) => ({
-              title: section.title,
-              onPress: () => router.push(section.href),
-            }))}
-            selectedIndex={getSelectedIndex(pathname)}
-          />
-          <ResponsiveLayout>
-            <main style={{paddingTop: 24, paddingBottom: 48}}>
-              {children}
-            </main>
-          </ResponsiveLayout>
+          <AuthProvider>
+            <MainNavigationBar
+              sections={sections.map((section) => ({
+                title: section.title,
+                onPress: () => router.push(section.href),
+              }))}
+              selectedIndex={getSelectedIndex(pathname)}
+            />
+            <ResponsiveLayout>
+              <main style={{paddingTop: 24, paddingBottom: 48}}>
+                {children}
+              </main>
+            </ResponsiveLayout>
+          </AuthProvider>
         </ThemeContextProvider>
       </body>
     </html>
