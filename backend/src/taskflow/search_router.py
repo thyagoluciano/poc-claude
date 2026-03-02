@@ -1,40 +1,20 @@
 """Public search router for TaskFlow API."""
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from .database import get_db
-from .db_models import TaskModel, UserModel
+from .repositories import TaskRepository
+from .schemas import TaskSearchResult
 
 router = APIRouter(prefix="/search", tags=["search"])
-
-
-class TaskOwnerInfo(BaseModel):
-    """Public owner information returned in search results."""
-
-    username: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class TaskSearchResult(BaseModel):
-    """Schema for task search results with owner info."""
-
-    id: int
-    title: str
-    description: str | None
-    status: str
-    priority: str
-    owner_id: int
-    owner: TaskOwnerInfo
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 @router.get("/tasks", response_model=list[TaskSearchResult])
 def search_tasks(
     q: str = Query(default="", max_length=200),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=50),
     db: Session = Depends(get_db),
 ) -> list[TaskSearchResult]:
     """Search tasks by title (case insensitive, partial match).
@@ -43,6 +23,8 @@ def search_tasks(
 
     Args:
         q: Search query string to match against task titles.
+        skip: Number of results to skip for pagination.
+        limit: Maximum number of results to return (1-50).
         db: Database session.
 
     Returns:
@@ -51,10 +33,5 @@ def search_tasks(
     if not q.strip():
         return []
 
-    tasks = (
-        db.query(TaskModel)
-        .join(UserModel, TaskModel.owner_id == UserModel.id)
-        .filter(TaskModel.title.ilike(f"%{q}%"))
-        .all()
-    )
-    return tasks
+    repo = TaskRepository(db)
+    return repo.search_by_title(q, skip=skip, limit=limit)
