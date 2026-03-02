@@ -6,7 +6,6 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jose import jwt
-from sqlalchemy.orm import Session
 
 from taskflow.auth import (
     ALGORITHM,
@@ -14,45 +13,8 @@ from taskflow.auth import (
     create_access_token,
     decode_access_token,
     get_current_user,
-    hash_password,
-    verify_password,
 )
-from taskflow.auth_router import router
-from taskflow.database import get_db
 from taskflow.db_models import UserModel
-
-
-@pytest.fixture
-def app(db_session: Session) -> FastAPI:
-    """Create a FastAPI test application with overridden database dependency."""
-    test_app = FastAPI()
-    test_app.include_router(router)
-
-    def override_get_db():
-        yield db_session
-
-    test_app.dependency_overrides[get_db] = override_get_db
-    return test_app
-
-
-@pytest.fixture
-def client(app: FastAPI) -> TestClient:
-    """Create a test HTTP client."""
-    return TestClient(app)
-
-
-@pytest.fixture
-def sample_user(db_session: Session) -> UserModel:
-    """Create a sample user in the test database."""
-    user = UserModel(
-        email="test@example.com",
-        username="testuser",
-        hashed_password=hash_password("securepassword123"),
-    )
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
-    return user
 
 
 def test_should_create_access_token() -> None:
