@@ -7,14 +7,16 @@ import {
   ButtonPrimary,
   ButtonSecondary,
   Callout,
+  ErrorFeedbackScreen,
   Form,
   ResponsiveLayout,
   Select,
-  Spinner,
+  SkeletonRectangle,
   Stack,
   TextField,
   Title1,
   useDialog,
+  useSnackbar,
 } from '@telefonica/mistica';
 import {useParams, useRouter} from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -53,25 +55,41 @@ const PRIORITY_OPTIONS = [
   {value: 'high', text: 'Alta'},
 ] as const;
 
+function EditFormSkeleton() {
+  return (
+    <Boxed>
+      <Stack space={16}>
+        <SkeletonRectangle height={56} />
+        <SkeletonRectangle height={96} />
+        <SkeletonRectangle height={56} />
+        <SkeletonRectangle height={56} />
+        <SkeletonRectangle height={48} width={160} />
+      </Stack>
+    </Boxed>
+  );
+}
+
 export default function EditTaskPage() {
   const router = useRouter();
   const params = useParams();
   const taskId = params.id as string;
   const {confirm} = useDialog();
+  const {openSnackbar} = useSnackbar();
 
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchTask = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadError(false);
     try {
       const data = await api.get<Task>(`/tasks/${taskId}`);
       setTask(data);
     } catch {
-      setError('Erro ao carregar task.');
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -92,8 +110,10 @@ export default function EditTaskPage() {
         priority: values['priority'] as string,
       };
       await api.put(`/tasks/${taskId}`, payload);
+      openSnackbar({message: 'Task atualizada com sucesso!'});
       router.push('/tasks');
     } catch {
+      openSnackbar({message: 'Erro ao atualizar task.', type: 'CRITICAL'});
       setError('Erro ao atualizar task. Verifique os dados e tente novamente.');
     } finally {
       setSubmitting(false);
@@ -110,13 +130,36 @@ export default function EditTaskPage() {
       onAccept: async () => {
         try {
           await api.delete(`/tasks/${taskId}`);
+          openSnackbar({message: 'Task excluida com sucesso!'});
           router.push('/tasks');
         } catch {
+          openSnackbar({message: 'Erro ao excluir task.', type: 'CRITICAL'});
           setError('Erro ao excluir task.');
         }
       },
     });
   };
+
+  if (!loading && loadError) {
+    return (
+      <ProtectedRoute>
+        <ErrorFeedbackScreen
+          title="Erro ao carregar task"
+          description="Nao foi possivel carregar os dados da task. Verifique sua conexao e tente novamente."
+          primaryButton={
+            <ButtonPrimary onPress={() => fetchTask()}>
+              Tentar novamente
+            </ButtonPrimary>
+          }
+          secondaryButton={
+            <ButtonSecondary onPress={() => router.push('/tasks')}>
+              Voltar para Tasks
+            </ButtonSecondary>
+          }
+        />
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -133,9 +176,7 @@ export default function EditTaskPage() {
           )}
 
           {loading ? (
-            <div style={{display: 'flex', justifyContent: 'center', paddingTop: 48}}>
-              <Spinner size={48} />
-            </div>
+            <EditFormSkeleton />
           ) : task ? (
             <Boxed>
               <Stack space={16}>

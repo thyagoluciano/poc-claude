@@ -5,12 +5,12 @@ import {
   ButtonPrimary,
   Callout,
   EmptyState,
+  IconClipboardRegular,
   ResponsiveLayout,
-  Spinner,
+  SkeletonRectangle,
   Stack,
   Tabs,
   Title1,
-  IconClipboardRegular,
 } from '@telefonica/mistica';
 import {useRouter} from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -92,9 +92,11 @@ export default function TasksPage() {
           )}
 
           {loading ? (
-            <div style={{display: 'flex', justifyContent: 'center', paddingTop: 48}}>
-              <Spinner size={48} />
-            </div>
+            <Stack space={16}>
+              {Array.from({length: 3}, (_, i) => (
+                <SkeletonRectangle key={i} height={120} />
+              ))}
+            </Stack>
           ) : filteredTasks.length === 0 ? (
             <EmptyState
               title="Nenhuma task encontrada"
