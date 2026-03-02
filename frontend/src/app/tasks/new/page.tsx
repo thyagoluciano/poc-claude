@@ -10,8 +10,10 @@ import {
   ResponsiveLayout,
   Select,
   Stack,
+  SuccessFeedbackScreen,
   TextField,
   Title1,
+  useSnackbar,
 } from '@telefonica/mistica';
 import {useRouter} from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -38,8 +40,10 @@ const PRIORITY_OPTIONS = [
 
 export default function NewTaskPage() {
   const router = useRouter();
+  const {openSnackbar} = useSnackbar();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = async (values: Record<string, unknown>) => {
     setError(null);
@@ -52,13 +56,35 @@ export default function NewTaskPage() {
         priority: (values['priority'] as string) || 'medium',
       };
       await api.post('/tasks', payload);
-      router.push('/tasks');
+      setShowSuccess(true);
     } catch {
+      openSnackbar({message: 'Erro ao criar task. Tente novamente.', type: 'CRITICAL'});
       setError('Erro ao criar task. Verifique os dados e tente novamente.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (showSuccess) {
+    return (
+      <ProtectedRoute>
+        <SuccessFeedbackScreen
+          title="Task criada com sucesso!"
+          description="Sua nova task foi adicionada a lista."
+          primaryButton={
+            <ButtonPrimary onPress={() => router.push('/tasks')}>
+              Ver Tasks
+            </ButtonPrimary>
+          }
+          secondaryButton={
+            <ButtonSecondary onPress={() => setShowSuccess(false)}>
+              Criar outra
+            </ButtonSecondary>
+          }
+        />
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>

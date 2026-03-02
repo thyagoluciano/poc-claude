@@ -15,7 +15,7 @@ import {
   ResponsiveLayout,
   Row,
   RowList,
-  Spinner,
+  SkeletonRectangle,
   Stack,
   Text2,
   Title1,
@@ -90,9 +90,20 @@ export default function DashboardPage() {
     return (
       <ProtectedRoute>
         <ResponsiveLayout>
-          <div style={{display: 'flex', justifyContent: 'center', paddingTop: 48}}>
-            <Spinner size={48} />
-          </div>
+          <Stack space={32}>
+            <Title1>Dashboard</Title1>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16}}>
+              {Array.from({length: 4}, (_, i) => (
+                <SkeletonRectangle key={i} height={120} />
+              ))}
+            </div>
+            <SkeletonRectangle height={80} />
+            <Stack space={16}>
+              {Array.from({length: 3}, (_, i) => (
+                <SkeletonRectangle key={i} height={64} />
+              ))}
+            </Stack>
+          </Stack>
         </ResponsiveLayout>
       </ProtectedRoute>
     );
