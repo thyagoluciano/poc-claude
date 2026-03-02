@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.github.com)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh project:*)",
+      "Bash(gh api:*)",
+      "Bash(cd backend && python -m pytest:*)",
+      "Bash(cd frontend && npm:*)",
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
+      "Bash(npx:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)"
+    ]
+  }
+}
