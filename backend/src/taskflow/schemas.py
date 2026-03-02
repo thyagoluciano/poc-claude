@@ -41,6 +41,27 @@ class TaskResponse(TaskBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class TaskSearchOwner(BaseModel):
+    """Public owner information returned in search results."""
+
+    username: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TaskSearchResult(BaseModel):
+    """Schema for task search results with owner info."""
+
+    id: int
+    title: str
+    description: str | None
+    status: str
+    priority: str
+    owner: TaskSearchOwner
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserBase(BaseModel):
     """Schema base para usuarios."""
 

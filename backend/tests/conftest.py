@@ -12,6 +12,7 @@ from taskflow.auth import create_access_token, hash_password
 from taskflow.auth_router import router as auth_router
 from taskflow.database import Base, get_db
 from taskflow.db_models import UserModel
+from taskflow.search_router import router as search_router
 from taskflow.task_router import router as task_router
 
 SQLITE_IN_MEMORY_URL = "sqlite://"
@@ -48,6 +49,7 @@ def app(db_session: Session) -> FastAPI:
     """Create a FastAPI test application with all routers and overridden DB."""
     test_app = FastAPI(title="TaskFlow API")
     test_app.include_router(auth_router)
+    test_app.include_router(search_router)
     test_app.include_router(task_router)
 
     def override_get_db() -> Generator[Session, None, None]:

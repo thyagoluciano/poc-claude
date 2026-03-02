@@ -105,6 +105,31 @@ class TaskRepository:
         self.db.refresh(db_task)
         return db_task
 
+    def search_by_title(
+        self, query: str, skip: int = 0, limit: int = 50
+    ) -> list[TaskModel]:
+        """Search tasks by title with case insensitive partial matching.
+
+        LIKE wildcards (% and _) in the query are escaped before searching.
+
+        Args:
+            query: Search string to match against task titles.
+            skip: Number of results to skip (offset).
+            limit: Maximum number of results to return (capped at 50).
+
+        Returns:
+            A list of matching task models with owner relationship loaded.
+        """
+        escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        return list(
+            self.db.query(TaskModel)
+            .join(UserModel, TaskModel.owner_id == UserModel.id)
+            .filter(TaskModel.title.ilike(f"%{escaped}%", escape="\\"))
+            .offset(skip)
+            .limit(min(limit, 50))
+            .all()
+        )
+
     def delete(self, task_id: int) -> bool:
         """Delete a task by its ID.
 

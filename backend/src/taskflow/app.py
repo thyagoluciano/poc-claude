@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .auth_router import router as auth_router
 from .database import Base, engine
+from .search_router import router as search_router
 from .task_router import router as task_router
 
 app = FastAPI(title="TaskFlow API")
@@ -18,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(search_router)
 app.include_router(task_router)
 
 
