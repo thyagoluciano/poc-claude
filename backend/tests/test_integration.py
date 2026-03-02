@@ -453,3 +453,58 @@ class TestTaskValidation:
         resp = client.get("/tasks", headers=auth_headers)
         assert resp.status_code == 200
         assert resp.json() == []
+
+    def test_should_reject_empty_title(
+        self, client: TestClient, auth_headers: dict[str, str]
+    ) -> None:
+        """POST /tasks rejects task with empty title."""
+        resp = client.post(
+            "/tasks",
+            json={"title": ""},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
+
+    def test_should_reject_missing_title(
+        self, client: TestClient, auth_headers: dict[str, str]
+    ) -> None:
+        """POST /tasks rejects task without title field."""
+        resp = client.post(
+            "/tasks",
+            json={"description": "No title provided"},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
+
+    def test_should_reject_invalid_status(
+        self, client: TestClient, auth_headers: dict[str, str]
+    ) -> None:
+        """POST /tasks rejects task with invalid status value."""
+        resp = client.post(
+            "/tasks",
+            json={"title": "Bad Status", "status": "invalid_status"},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
+
+    def test_should_reject_invalid_priority(
+        self, client: TestClient, auth_headers: dict[str, str]
+    ) -> None:
+        """POST /tasks rejects task with invalid priority value."""
+        resp = client.post(
+            "/tasks",
+            json={"title": "Bad Priority", "priority": "urgent"},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
+
+    def test_should_reject_title_too_long(
+        self, client: TestClient, auth_headers: dict[str, str]
+    ) -> None:
+        """POST /tasks rejects task with title exceeding 200 characters."""
+        resp = client.post(
+            "/tasks",
+            json={"title": "x" * 201},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
